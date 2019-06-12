@@ -2,5 +2,4 @@
 *.qmlc
 settings.json
 faster_rcnn_inception_v2_coco
-ssd_mobilenet_v1_coco
 video.avi
