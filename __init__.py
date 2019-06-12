@@ -15,7 +15,7 @@ import time
 import numpy
 import glob
 import logging
-from detector import DetectorAPI
+from .detector import DetectorAPI
 # Each skill is contained within its own class, which inherits base methods
 # from the MycroftSkill class.  You extend this class as shown below.
 
