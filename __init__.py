@@ -22,7 +22,7 @@ class MonitoringSkill(MycroftSkill):
         super(MonitoringSkill, self).__init__(name="MonitoringSkill")
         
         # Initialize working variables used within the skill.
-        self.count = 0
+        self.lock = True
 
     # The "handle_xxxx_intent" function is triggered by Mycroft when the
     # skill's intent is matched.  The intent is defined by the IntentBuilder()
@@ -42,11 +42,40 @@ class MonitoringSkill(MycroftSkill):
         #    dialogs/en-us/hello.world.dialog
     #    self.speak_dialog("hello.world")
 
+    def personDetected(self, img):
+        self.speak_dialog("monitoring.person.detected")
+
     @intent_handler(IntentBuilder("").require("Monitoring"))
     def handle_monitoring_intent(self, message):
-        print(message)
-        self.log.debug(message)
         self.speak_dialog("monitoring.started", data={"date": "TESTE" })
+        model_path = 'ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
+        odapi = DetectorAPI(path_to_ckpt=model_path)
+        cap = cv2.VideoCapture(0)
+        threshold = 0.7
+
+        while self.lock:
+            r, img = cap.read()
+            img = cv2.resize(img, (1280, 720))
+
+            boxes, scores, classes, num = odapi.processFrame(img)
+
+            # Visualization of the results of a detection.
+
+            for i in range(len(boxes)):
+                # Class 1 represents human
+                if classes[i] == 1 and scores[i] > threshold:
+                    box = boxes[i]
+                    cv2.rectangle(img,(box[1],box[0]),(box[3],box[2]),(255,0,0),2)
+                    self.personDetected(img)
+
+            cv2.imshow("preview", img)
+            key = cv2.waitKey(1)
+            if key & 0xFF == ord('q'):
+                self.stop()
+
+    def stop(self):
+        self.lock = False
+        return True
 
     # The "stop" method defines what Mycroft does when told to stop during
     # the skill's execution. In this case, since the skill's functionality
