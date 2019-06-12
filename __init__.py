@@ -53,7 +53,7 @@ class MonitoringSkill(MycroftSkill):
     @intent_handler(IntentBuilder("").require("Monitoring"))
     def handle_monitoring_intent(self, message):
         self.speak_dialog("monitoring.started", data={"date": "TESTE" })
-        model_path = './ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
+        model_path = '/home/bruno/Documentos/Projetos/octopus/skill-monitoring/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
         odapi = DetectorAPI(path_to_ckpt=model_path)
         cap = cv2.VideoCapture(0)
         threshold = 0.7
