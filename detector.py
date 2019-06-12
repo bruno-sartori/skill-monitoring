@@ -58,28 +58,3 @@ class DetectorAPI:
     def close(self):
         self.sess.close()
         self.default_graph.close()
-
-if __name__ == "__main__":
-    model_path = 'ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
-    odapi = DetectorAPI(path_to_ckpt=model_path)
-    threshold = 0.7
-    cap = cv2.VideoCapture(1) #'video.avi')
-
-    while True:
-        r, img = cap.read()
-        img = cv2.resize(img, (1280, 720))
-
-        boxes, scores, classes, num = odapi.processFrame(img)
-
-        # Visualization of the results of a detection.
-
-        for i in range(len(boxes)):
-            # Class 1 represents human
-            if classes[i] == 1 and scores[i] > threshold:
-                box = boxes[i]
-                cv2.rectangle(img,(box[1],box[0]),(box[3],box[2]),(255,0,0),2)
-
-        cv2.imshow("preview", img)
-        key = cv2.waitKey(1)
-        if key & 0xFF == ord('q'):
-            break
