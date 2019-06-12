@@ -10,7 +10,12 @@
 from adapt.intent import IntentBuilder
 from mycroft.skills.core import MycroftSkill, intent_handler
 from mycroft.util.log import LOG
-
+import cv2
+import time
+import numpy
+import glob
+import logging
+from detector import DetectorAPI
 # Each skill is contained within its own class, which inherits base methods
 # from the MycroftSkill class.  You extend this class as shown below.
 
