@@ -22,7 +22,7 @@ from time import sleep
 
 def threaded(fn):
     def wrapper(*args, **kwargs):
-        threading.Thread(target=fn, args=args, kwargs=kwargs).start()
+        Thread(target=fn, args=args, kwargs=kwargs).start()
     return wrapper
 
 
@@ -108,7 +108,7 @@ class MonitoringSkill(MycroftSkill):
         
         self.moviment()
         self.detect()
-        
+
         print("thread finished...exiting")
 
 
