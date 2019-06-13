@@ -29,7 +29,7 @@ class Moviment(Thread):
         self.running = False
     
 
-     def sendCommand(self, command_url):        
+     def sendCommand(self, command_url):
         try:
             response = requests.put(command_url)
             print(response)
