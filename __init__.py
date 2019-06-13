@@ -102,14 +102,14 @@ class MonitoringSkill(MycroftSkill):
         self.thread2 = Thread(target = self.detect)
         self.thread1.start()
         self.thread2.start()
+        self.thread1.join()
+        self.thread2.join()
 
         print("thread finished...exiting")
 
 
     def stop(self):
         self.lock = False
-        self.thread1.join()
-        self.thread2.join()
         return True
 
     # The "stop" method defines what Mycroft does when told to stop during
