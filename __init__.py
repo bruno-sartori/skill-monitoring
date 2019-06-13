@@ -16,6 +16,7 @@ import numpy
 import glob
 import logging
 from .detector import DetectorAPI
+from .camera import CameraConfig
 # Each skill is contained within its own class, which inherits base methods
 # from the MycroftSkill class.  You extend this class as shown below.
 
@@ -28,6 +29,10 @@ class MonitoringSkill(MycroftSkill):
         
         # Initialize working variables used within the skill.
         self.lock = True
+        self.detected = 0
+        self.frameNumber = 0
+        self.intervalCount = 0
+        self.cameraConfig = CameraConfig()
 
     # The "handle_xxxx_intent" function is triggered by Mycroft when the
     # skill's intent is matched.  The intent is defined by the IntentBuilder()
@@ -48,17 +53,20 @@ class MonitoringSkill(MycroftSkill):
     #    self.speak_dialog("hello.world")
 
     def personDetected(self, img):
-        self.speak_dialog("monitoring.person.detected")
-
+        if self.detected === 5:
+            self.speak_dialog("monitoring.person.detected")
+        else:
+            self.detected += 1
     @intent_handler(IntentBuilder("").require("Monitoring"))
     def handle_monitoring_intent(self, message):
         self.speak_dialog("monitoring.started", data={"date": "TESTE" })
         model_path = '/home/bruno/Documentos/Projetos/octopus/skill_monitoring/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
         odapi = DetectorAPI(path_to_ckpt=model_path)
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(self.cameraConfig.streamUrl)
         threshold = 0.7
 
         while self.lock:
+            self.frameNumber += 1
             r, img = cap.read()
             img = cv2.resize(img, (1280, 720))
 
@@ -77,6 +85,16 @@ class MonitoringSkill(MycroftSkill):
             key = cv2.waitKey(1)
             if key & 0xFF == ord('q'):
                 self.stop()
+
+            if (self.frameNumber == self.intervalCount):
+                self.cameraConfig.turnLeft()
+            elif (self.frameNumber == self.intervalCount + 5):
+                self.cameraConfig.stop()
+            elif (self.frameNumber == self.intervalCount + 10):
+                self.cameraConfig.turnRight()
+            else:
+                pass
+            self.intervalCount +=1
 
     def stop(self):
         self.lock = False
