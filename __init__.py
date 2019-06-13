@@ -31,7 +31,7 @@ class MonitoringSkill(MycroftSkill):
         self.lock = True
         self.detected = 0
         self.frameNumber = 0
-        self.intervalCount = 0
+        self.intervalCount = 5
         self.cameraConfig = CameraConfig()
 
     # The "handle_xxxx_intent" function is triggered by Mycroft when the
@@ -53,10 +53,8 @@ class MonitoringSkill(MycroftSkill):
     #    self.speak_dialog("hello.world")
 
     def personDetected(self, img):
-        if self.detected == 5:
-            self.speak_dialog("monitoring.person.detected")
-        else:
-            self.detected += 1
+        print("PERSON DETECTED")
+    
     @intent_handler(IntentBuilder("").require("Monitoring"))
     def handle_monitoring_intent(self, message):
         self.speak_dialog("monitoring.started", data={"date": "TESTE" })
