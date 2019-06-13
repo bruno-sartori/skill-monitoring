@@ -62,7 +62,7 @@ class MonitoringSkill(MycroftSkill):
         self.speak_dialog("monitoring.started", data={"date": "TESTE" })
         model_path = '/home/bruno/Documentos/Projetos/octopus/skill_monitoring/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
         odapi = DetectorAPI(path_to_ckpt=model_path)
-        cap = cv2.VideoCapture(self.cameraConfig.streamUrl)
+        cap = cv2.VideoCapture(self.cameraConfig.stream_url)
         threshold = 0.7
 
         while self.lock:
