@@ -16,15 +16,8 @@ import numpy
 import glob
 import logging
 from .detector import DetectorAPI
-from .camera import CameraConfig
-from threading import Thread
-from time import sleep
-
-def threaded(fn):
-    def wrapper(*args, **kwargs):
-        Thread(target=fn, args=args, kwargs=kwargs).start()
-    return wrapper
-
+from .camera import Camera
+from .moviment import Moviment
 
 # Each skill is contained within its own class, which inherits base methods
 # from the MycroftSkill class.  You extend this class as shown below.
@@ -62,52 +55,12 @@ class MonitoringSkill(MycroftSkill):
     def personDetected(self, img):
         logging.error("PERSON DETECTED")
 
-    @threaded
-    def detect(self, img):
-        model_path = '/home/bruno/Documentos/Projetos/octopus/skill_monitoring/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
-        odapi = DetectorAPI(path_to_ckpt=model_path)
-        cap = cv2.VideoCapture(self.cameraConfig.stream_url)
-        threshold = 0.7
-
-        while self.lock:
-            r, img = cap.read()
-            img = cv2.resize(img, (1280, 720))
-
-            boxes, scores, classes, num = odapi.processFrame(img)
-
-            # Visualization of the results of a detection.
-
-            for i in range(len(boxes)):
-                # Class 1 represents human
-                if classes[i] == 1 and scores[i] > threshold:
-                    box = boxes[i]
-                    cv2.rectangle(img,(box[1],box[0]),(box[3],box[2]),(255,0,0),2)
-                    self.personDetected(img)
-                              # Read image
-            img = cv2.resize(img, (960, 540))
-            cv2.imshow("preview", img)
-            key = cv2.waitKey(1)
-            if key & 0xFF == ord('q'):
-                self.stop()
-
-    @threaded
-    def moviment():
-        logging.debug("LEFT")
-        self.cameraConfig.turnLeft()
-        sleep(2)
-        self.cameraConfig.stop()
-        self.sleep(1)
-        logging.debug("RIGHT")
-        self.cameraConfig.turnRight()
-        self.sleep(2)
-        self.moviment()
-
     @intent_handler(IntentBuilder("").require("Monitoring"))
     def handle_monitoring_intent(self, message):
         self.speak_dialog("monitoring.started", data={"date": "TESTE" })
         
-        self.moviment()
-        self.detect()
+        Moviment()
+        Camera()
 
         print("thread finished...exiting")
 
