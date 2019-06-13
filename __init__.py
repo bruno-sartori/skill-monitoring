@@ -19,6 +19,13 @@ from .detector import DetectorAPI
 from .camera import CameraConfig
 from threading import Thread
 from time import sleep
+
+def threaded(fn):
+    def wrapper(*args, **kwargs):
+        threading.Thread(target=fn, args=args, kwargs=kwargs).start()
+    return wrapper
+
+
 # Each skill is contained within its own class, which inherits base methods
 # from the MycroftSkill class.  You extend this class as shown below.
 
@@ -55,6 +62,7 @@ class MonitoringSkill(MycroftSkill):
     def personDetected(self, img):
         logging.error("PERSON DETECTED")
 
+    @threaded
     def detect(self, img):
         model_path = '/home/bruno/Documentos/Projetos/octopus/skill_monitoring/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
         odapi = DetectorAPI(path_to_ckpt=model_path)
@@ -82,7 +90,7 @@ class MonitoringSkill(MycroftSkill):
             if key & 0xFF == ord('q'):
                 self.stop()
 
-    
+    @threaded
     def moviment():
         logging.debug("LEFT")
         self.cameraConfig.turnLeft()
@@ -98,13 +106,9 @@ class MonitoringSkill(MycroftSkill):
     def handle_monitoring_intent(self, message):
         self.speak_dialog("monitoring.started", data={"date": "TESTE" })
         
-        self.thread1 = Thread(target = self.moviment)
-        self.thread2 = Thread(target = self.detect)
-        self.thread1.start()
-        self.thread2.start()
-        self.thread1.join()
-        self.thread2.join()
-
+        self.moviment()
+        self.detect()
+        
         print("thread finished...exiting")
 
 
