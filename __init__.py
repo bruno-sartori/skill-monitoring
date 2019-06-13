@@ -17,6 +17,8 @@ import glob
 import logging
 from .detector import DetectorAPI
 from .camera import CameraConfig
+from threading import Thread
+from time import sleep
 # Each skill is contained within its own class, which inherits base methods
 # from the MycroftSkill class.  You extend this class as shown below.
 
@@ -30,10 +32,8 @@ class MonitoringSkill(MycroftSkill):
         # Initialize working variables used within the skill.
         self.lock = True
         self.detected = 0
-        self.frameNumber = 0
-        self.intervalCount = 5
         self.cameraConfig = CameraConfig()
-
+        
     # The "handle_xxxx_intent" function is triggered by Mycroft when the
     # skill's intent is matched.  The intent is defined by the IntentBuilder()
     # pieces, and is triggered when the user's utterance matches the pattern
@@ -53,18 +53,15 @@ class MonitoringSkill(MycroftSkill):
     #    self.speak_dialog("hello.world")
 
     def personDetected(self, img):
-        print("PERSON DETECTED")
-    
-    @intent_handler(IntentBuilder("").require("Monitoring"))
-    def handle_monitoring_intent(self, message):
-        self.speak_dialog("monitoring.started", data={"date": "TESTE" })
+        logging.error("PERSON DETECTED")
+
+    def detect(self, img):
         model_path = '/home/bruno/Documentos/Projetos/octopus/skill_monitoring/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
         odapi = DetectorAPI(path_to_ckpt=model_path)
         cap = cv2.VideoCapture(self.cameraConfig.stream_url)
         threshold = 0.7
 
         while self.lock:
-            self.frameNumber += 1
             r, img = cap.read()
             img = cv2.resize(img, (1280, 720))
 
@@ -85,18 +82,34 @@ class MonitoringSkill(MycroftSkill):
             if key & 0xFF == ord('q'):
                 self.stop()
 
-            if (self.frameNumber == self.intervalCount):
-                self.cameraConfig.turnLeft()
-            elif (self.frameNumber == self.intervalCount + 5):
-                self.cameraConfig.stop()
-            elif (self.frameNumber == self.intervalCount + 10):
-                self.cameraConfig.turnRight()
-            else:
-                pass
-            self.intervalCount +=1
+    
+    def moviment():
+        logging.debug("LEFT")
+        self.cameraConfig.turnLeft()
+        sleep(2)
+        self.cameraConfig.stop()
+        self.sleep(1)
+        logging.debug("RIGHT")
+        self.cameraConfig.turnRight()
+        self.sleep(2)
+        self.moviment()
+
+    @intent_handler(IntentBuilder("").require("Monitoring"))
+    def handle_monitoring_intent(self, message):
+        self.speak_dialog("monitoring.started", data={"date": "TESTE" })
+        
+        self.thread1 = Thread(target = self.moviment)
+        self.thread2 = Thread(target = self.detect)
+        self.thread1.start()
+        self.thread2.start()
+
+        print("thread finished...exiting")
+
 
     def stop(self):
         self.lock = False
+        self.thread1.join()
+        self.thread2.join()
         return True
 
     # The "stop" method defines what Mycroft does when told to stop during
