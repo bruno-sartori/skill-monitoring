@@ -53,7 +53,7 @@ class MonitoringSkill(MycroftSkill):
     #    self.speak_dialog("hello.world")
 
     def personDetected(self, img):
-        if self.detected === 5:
+        if self.detected == 5:
             self.speak_dialog("monitoring.person.detected")
         else:
             self.detected += 1
