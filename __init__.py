@@ -78,7 +78,8 @@ class MonitoringSkill(MycroftSkill):
                     box = boxes[i]
                     cv2.rectangle(img,(box[1],box[0]),(box[3],box[2]),(255,0,0),2)
                     self.personDetected(img)
-
+                              # Read image
+            img = cv2.resize(img, (960, 540))
             cv2.imshow("preview", img)
             key = cv2.waitKey(1)
             if key & 0xFF == ord('q'):
