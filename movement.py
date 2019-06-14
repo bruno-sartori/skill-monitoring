@@ -8,7 +8,6 @@ class Movement(Thread):
         Thread.__init__(self)
         self.daemon = True
         self.running = True
-        self.start()
     
         self.command_url = 'http://192.168.2.167/PSIA/YG/PTZCtrl/channels/0/continuous'
 
@@ -17,27 +16,46 @@ class Movement(Thread):
         self.left_url = self.command_url + '?pan=1&tilt=0'
         self.up_url = self.command_url + '?pan=0&tilt=1'
         self.down_url = self.command_url + '?pan=0&tilt=-1'
+        
+        self.start()
 
     def run(self):
         while self.running:
-            print("Moviment running")
+            print("MOVING LEFT")
             self.turnLeft()
-            sleep(1)
-            self.stop()
-            sleep(1)
-            self.turnLeft()
-            sleep(1)
+            sleep(2)
             self.stop()
             sleep(4)
-            self.turnRight()
-            sleep(1)
+            print("MOVING LEFT")
+            self.turnLeft()
+            sleep(2)
             self.stop()
+            sleep(4)
+            print("MOVING LEFT")
+            self.turnLeft()
+            sleep(2)
+            self.stop()
+            sleep(4)
+            
+            print("MOVING RIGHT")
             self.turnRight()
-            sleep(1)
+            sleep(2)
+            self.stop()
+            sleep(4)
+            print("MOVING RIGHT")
+            self.turnRight()
+            sleep(2)
+            self.stop()
+            sleep(4)
+            print("MOVING RIGHT")
+            self.turnRight()
+            sleep(2)
             self.stop()
             sleep(4)
     
+    
     def stop(self):
+        self.stop()
         self.running = False
     
 

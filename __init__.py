@@ -39,17 +39,6 @@ class MonitoringSkill(MycroftSkill):
     # is found from each of the files:
     #    vocab/en-us/Hello.voc
     #    vocab/en-us/World.voc
-    # In this example that means it would match on utterances like:
-    #   'Hello world'
-    #   'Howdy you great big world'
-    #   'Greetings planet earth'
-    #@intent_handler(IntentBuilder("").require("Hello").require("World"))
-    #def handle_hello_world_intent(self, message):
-        # In this case, respond by simply speaking a canned response.
-        # Mycroft will randomly speak one of the lines from the file
-        #    dialogs/en-us/hello.world.dialog
-    #    self.speak_dialog("hello.world")
-
     def personDetected(self, img):
         logging.error("PERSON DETECTED")
 

@@ -1,7 +1,7 @@
 import requests
 import cv2
 from threading import Thread
-from .detector import DetectorAPI
+from detector import DetectorAPI
 import requests
 
 class Camera(Thread):
@@ -29,7 +29,6 @@ class Camera(Thread):
         threshold = 0.7
 
         while self.running:
-            print("READING")
             r, img = cap.read()
             img = cv2.resize(img, (1280, 720))
 
