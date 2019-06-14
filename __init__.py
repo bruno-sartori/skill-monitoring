@@ -32,7 +32,6 @@ class MonitoringSkill(MycroftSkill):
         # Initialize working variables used within the skill.
         self.lock = True
         self.detected = 0
-        self.cameraConfig = CameraConfig()
         
     # The "handle_xxxx_intent" function is triggered by Mycroft when the
     # skill's intent is matched.  The intent is defined by the IntentBuilder()
