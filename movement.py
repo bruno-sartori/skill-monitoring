@@ -1,8 +1,10 @@
 from threading import Thread
 from time import sleep
+import requests
 
-class Moviment(Thread):
+class Movement(Thread):
     def __init__(self):
+        print("INITIALIZING MOVIMENT...")
         Thread.__init__(self)
         self.daemon = True
         self.running = True
@@ -20,11 +22,20 @@ class Moviment(Thread):
         while self.running:
             print("Moviment running")
             self.turnLeft()
-            sleep(2)
+            sleep(1)
             self.stop()
             sleep(1)
+            self.turnLeft()
+            sleep(1)
+            self.stop()
+            sleep(4)
             self.turnRight()
-            sleep(2)
+            sleep(1)
+            self.stop()
+            self.turnRight()
+            sleep(1)
+            self.stop()
+            sleep(4)
     
     def stop(self):
         self.running = False

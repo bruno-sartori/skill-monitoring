@@ -1,15 +1,22 @@
 import requests
+import cv2
 from threading import Thread
+from .detector import DetectorAPI
+import requests
 
 class Camera(Thread):
     def __init__(self):
+        print("INITIALIZING CAMERA...")
         Thread.__init__(self)
         self.daemon = True
         self.running = True
         self.start()
     
 
-        self.stream_url = 'rtsp://192.168.2.167:8554/profile1' 
+        self.stream_url = 'rtsp://192.168.2.167:8554/profile0' 
+
+    def personDetected(self, img):
+        print("PERSON DETECTED")
 
 
     def stop(self):
@@ -18,7 +25,7 @@ class Camera(Thread):
     def run(self):
         model_path = '/home/bruno/Documentos/Projetos/octopus/skill_monitoring/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
         odapi = DetectorAPI(path_to_ckpt=model_path)
-        cap = cv2.VideoCapture(self.cameraConfig.stream_url)
+        cap = cv2.VideoCapture(self.stream_url)
         threshold = 0.7
 
         while self.running:
