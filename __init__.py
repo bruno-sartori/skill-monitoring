@@ -58,13 +58,17 @@ class MonitoringSkill(MycroftSkill):
     def handle_monitoring_intent(self, message):
         self.speak_dialog("monitoring.started", data={"date": "TESTE" })
         
-        Moviment()
-        Camera()
+        self.t1 = Moviment()
+        self.t2 = Camera()
 
+        self.t1.join()
+        self.t2.join()
         print("thread finished...exiting")
 
 
     def stop(self):
+        self.t1.stop()
+        self.t2.stop()
         self.lock = False
         return True
 

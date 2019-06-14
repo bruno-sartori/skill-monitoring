@@ -18,6 +18,7 @@ class Moviment(Thread):
 
     def run(self):
         while self.running:
+            print("Moviment running")
             self.turnLeft()
             sleep(2)
             self.stop()

@@ -22,6 +22,7 @@ class Camera(Thread):
         threshold = 0.7
 
         while self.running:
+            print("READING")
             r, img = cap.read()
             img = cv2.resize(img, (1280, 720))
 
