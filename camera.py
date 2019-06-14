@@ -26,13 +26,67 @@ class Camera(Thread):
     def stop(self):
         self.running = False
 
+    def detectObject(self, img, counter):
+        (dX, dY) = (0, 0)
+
+        # loop over the set of tracked points
+        for i in np.arange(1, len(self.pts)):
+            print("AQUI")
+            # if either of the tracked points are None, ignore
+            # them
+            if self.pts[i - 1] is None or self.pts[i] is None:
+                print("IS NONE")
+                continue
+
+            # check to see if enough points have been accumulated in
+            # the buffer
+            print("counter: {} - i: {}".format(counter, i))
+            if counter >= 10 and i == 1 and self.pts[-10] is not None:
+                print("IS NOT NONE")
+                # compute the difference between the x and y
+                # coordinates and re-initialize the direction
+                # text variables
+                dX = self.pts[-10][0] - self.pts[i][0]
+                dY = self.pts[-10][1] - self.pts[i][1]
+                (dirX, dirY) = ("", "")
+
+                # ensure there is significant movement in the
+                # x-direction
+                if np.abs(dX) > 20:
+                    dirX = "East" if np.sign(dX) == 1 else "West"
+
+                # ensure there is significant movement in the
+                # y-direction
+                if np.abs(dY) > 20:
+                    dirY = "North" if np.sign(dY) == 1 else "South"
+
+                # handle when both directions are non-empty
+                if dirX != "" and dirY != "":
+                    self.direction = "{}-{}".format(dirY, dirX)
+
+                # otherwise, only one direction is non-empty
+                else:
+                    self.direction = dirX if dirX != "" else dirY
+
+            # otherwise, compute the thickness of the line and
+            # draw the connecting lines
+            thickness = int(np.sqrt(self.buffer / float(i + 1)) * 2.5)
+            cv2.line(img, self.pts[i - 1], self.pts[i], (0, 0, 255), thickness)
+
+        # show the movement deltas and the direction of movement on
+        # the frame
+        cv2.putText(img, self.direction, (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
+            0.65, (0, 0, 255), 3)
+        cv2.putText(img, "dx: {}, dy: {}".format(dX, dY),
+            (10, img.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX,
+            0.35, (0, 0, 255), 1)
+
     def run(self):
         model_path = '/home/bruno/Documentos/Bruno/Projetos/skill-monitoring/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
         odapi = DetectorAPI(path_to_ckpt=model_path)
         cap = cv2.VideoCapture(self.stream_url)
         threshold = 0.7
 
-        (dX, dY) = (0, 0)
         counter = 0
 
         while self.running:
@@ -55,61 +109,9 @@ class Camera(Thread):
                     self.personDetected(img)
             
 
-            # object track
-
-            # loop over the set of tracked points
-            for i in np.arange(1, len(self.pts)):
-                print("AQUI")
-                # if either of the tracked points are None, ignore
-                # them
-                if self.pts[i - 1] is None or self.pts[i] is None:
-                    print("IS NONE")
-                    continue
-
-                # check to see if enough points have been accumulated in
-                # the buffer
-                print("counter: {} - i: {}".format(counter, i))
-                if counter >= 10 and i == 1 and self.pts[-10] is not None:
-                    print("IS NOT NONE")
-                    # compute the difference between the x and y
-                    # coordinates and re-initialize the direction
-                    # text variables
-                    dX = self.pts[-10][0] - self.pts[i][0]
-                    dY = self.pts[-10][1] - self.pts[i][1]
-                    (dirX, dirY) = ("", "")
-
-                    # ensure there is significant movement in the
-                    # x-direction
-                    if np.abs(dX) > 20:
-                        dirX = "East" if np.sign(dX) == 1 else "West"
-
-                    # ensure there is significant movement in the
-                    # y-direction
-                    if np.abs(dY) > 20:
-                        dirY = "North" if np.sign(dY) == 1 else "South"
-
-                    # handle when both directions are non-empty
-                    if dirX != "" and dirY != "":
-                        self.direction = "{}-{}".format(dirY, dirX)
-
-                    # otherwise, only one direction is non-empty
-                    else:
-                        self.direction = dirX if dirX != "" else dirY
-
-                # otherwise, compute the thickness of the line and
-                # draw the connecting lines
-                thickness = int(np.sqrt(self.buffer / float(i + 1)) * 2.5)
-                cv2.line(img, self.pts[i - 1], self.pts[i], (0, 0, 255), thickness)
-
-            # show the movement deltas and the direction of movement on
-            # the frame
-            print("HERE")
-            print(self.direction)
-            cv2.putText(img, self.direction, (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
-                0.65, (0, 0, 255), 3)
-            cv2.putText(img, "dx: {}, dy: {}".format(dX, dY),
-                (10, img.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX,
-                0.35, (0, 0, 255), 1)
+            # OBJECT TRACKING BELOW
+            self.detectObject(img, counter)
+            
 
             counter += 1
             # Read image
