@@ -5,21 +5,63 @@ from detector import DetectorAPI
 import numpy as np
 from collections import deque
 from movement import Movement
+import time
+import sys
 
 class Camera():
-    def __init__(self):
+    def __init__(self, move=False):
+        self.move = move
         self.running = True
-        self.movement = Movement()
         self.buffer = 32
-        self.direction = ''
         self.pts = deque(maxlen=self.buffer)
         self.area = [250, 150, 800, 600]
-        self.stream_url = 'rtsp://192.168.2.167:8554/profile1'
+        self.stream_url = 0 #'rtsp://192.168.2.167:8554/profile1'
         self.isMoving = False
+        self.isInside =  False
+        self.lastNotificationSend = 0
+        self.detectedTime = 0
+        self.noDetectedTime = 0
+        self.detectThreshold = 10 # seconds
+        self.noDetectThreshold = 3
         
-    def personDetected(self, img):
-        print("PERSON DETECTED")
+        if (self.move):
+            self.movement = Movement()
+    
+    def sendAlert(self):
+        print("=====ALERT=====")
 
+    def checkDetectedTime(self):
+        now = time.time()
+
+        # a person stayed in camera's area for more time than the threshold 
+        if (self.detectedTime != 0 and now - self.detectedTime > self.detectThreshold):
+            if (self.lastNotificationSend == 0):
+                self.lastNotificationSend = time.time()
+                self.sendAlert()
+            elif (time.time() - self.lastNotificationSend > self.detectThreshold):
+                self.lastNotificationSend = time.time()
+                self.sendAlert() 
+
+    def noPersonDetected(self):
+        now = time.time()
+    
+        if (self.noDetectedTime != 0): 
+            #print("NO detected time: {}".format(now - self.noDetectedTime))
+            
+            if (now - self.noDetectedTime > self.noDetectThreshold):
+                self.detectedTime = 0 # zera se não encontrar nenhuma pessoa por +3s
+        elif (self.noDetectedTime == 0):
+            self.noDetectedTime = time.time()
+        
+    
+    # TODO: handle multiple detected persons
+    def personDetected(self):
+        if (self.detectedTime == 0):
+            self.detectedTime = time.time()
+
+        self.noDetectedTime = 0
+        #print("Detected time: {}".format(time.time() - self.detectedTime))
+        
     def stop(self):
         self.running = False
 
@@ -29,74 +71,80 @@ class Camera():
 
     def trackPerson(self, img, counter):
         (dX, dY) = (0, 0)
+        direction = ''
 
         # loop over the set of tracked points
         for i in np.arange(1, len(self.pts)):
             # if either of the tracked points are None, ignore them
             if self.pts[i - 1] is None or self.pts[i] is None:
                 continue
+            try:
+                # check to see if enough points have been accumulated in the buffer
+                if counter >= 10 and i == 1 and self.pts[-10] is not None:
+                    # compute the difference between the x and y
+                    # coordinates and re-initialize the direction text variables
+                    dX = self.pts[-10][0] - self.pts[i][0]
+                    dY = self.pts[-10][1] - self.pts[i][1]
+                    (dirX, dirY) = ("", "")
 
-            # check to see if enough points have been accumulated in the buffer
-            if counter >= 10 and i == 1 and self.pts[-10] is not None:
-                # compute the difference between the x and y
-                # coordinates and re-initialize the direction text variables
-                dX = self.pts[-10][0] - self.pts[i][0]
-                dY = self.pts[-10][1] - self.pts[i][1]
-                (dirX, dirY) = ("", "")
-
-                # ensure there is significant movement in the x-direction
-                if np.abs(dX) > 20:
-                    if np.sign(dX) == 1:
-                        dirX = 'RIGHT'
-                    else:
-                        dirX = 'LEFT'
-                # ensure there is significant movement in the y-direction
-                if np.abs(dY) > 20:
-                    if np.sign(dY) == 1:
-                        dirY = 'UP'
-                    else:
-                        dirY = 'DOWN'
-              
-                # handle when both directions are non-empty
-                if dirX != "" and dirY != "":
-                    self.direction = "{}-{}".format(dirY, dirX)
-
-                # otherwise, only one direction is non-empty
-                else:
-                    self.direction = dirX if dirX != "" else dirY
+                    # ensure there is significant movement in the x-direction
+                    if np.abs(dX) > 20:
+                        if np.sign(dX) == 1:
+                            dirX = 'RIGHT'
+                        else:
+                            dirX = 'LEFT'
+                    # ensure there is significant movement in the y-direction
+                    if np.abs(dY) > 20:
+                        if np.sign(dY) == 1:
+                            dirY = 'UP'
+                        else:
+                            dirY = 'DOWN'
                 
+                    # handle when both directions are non-empty
+                    if dirX != "" and dirY != "":
+                        direction = "{}-{}".format(dirY, dirX)
+
+                    # otherwise, only one direction is non-empty
+                    else:
+                        direction = dirX if dirX != "" else dirY
+            except IndexError as e:
+                print("Error: %s" % e)
+                pass     
             # otherwise, compute the thickness of the line and draw the connecting lines
             thickness = int(np.sqrt(self.buffer / float(i + 1)) * 2.5)
             cv2.line(img, self.pts[i - 1], self.pts[i], (0, 0, 255), thickness)
-
-            if (self.rectContains(self.area, [dX, dY])):
+        
+        
+        if (self.move):
+            if (self.isInside):
                 print("CONTAINS")
                 if (self.isMoving):
                     print("STOP")
                     self.isMoving = False
                     self.movement.move('STOP')
             else:
-                print("MOVING {}".format(self.direction))
+                print("MOVING {}".format(direction))
                 self.isMoving = True
-                self.movement.move(self.direction)
+                self.movement.move(direction)
                 self.movement.move('STOP')
-        
 
         # show the movement deltas and the direction of movement on the frame
-        cv2.putText(img, self.direction, (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
+        cv2.putText(img, direction, (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
             0.65, (0, 0, 255), 3)
         cv2.putText(img, "dx: {}, dy: {}".format(dX, dY),
             (10, img.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX,
             0.35, (0, 0, 255), 1)
 
     def run(self):
-        model_path = '/home/bruno/Documentos/Projetos/octopus/skill_monitoring/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
+        model_path = '/home/bruno/Documentos/Projetos/octopus/skill-monitoring/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
         odapi = DetectorAPI(path_to_ckpt=model_path)
         cap = cv2.VideoCapture(self.stream_url)
         threshold = 0.7
         counter = 0
+        
 
         while self.running:
+            initTime = time.time()
             r, img = cap.read()
 
             if r == True:
@@ -104,6 +152,8 @@ class Camera():
                 cv2.rectangle(img, (self.area[0],self.area[1]),(self.area[2], self.area[3]),(0,255,0),3)
 
                 boxes, scores, classes, num = odapi.processFrame(img)
+
+                possiblyDetected = len(boxes)
 
                 # Visualization of the results of a detection.
                 for i in range(len(boxes)):
@@ -114,15 +164,22 @@ class Camera():
 
                         center = (int((box[1]+box[3])/2), int((box[0]+box[2])/2))
                         cv2.circle(img, center, 5, (0, 0, 255), -1)
+                        
+                        self.isInside = self.rectContains(self.area, center)
                         self.pts.appendleft(center)
-                        self.personDetected(img)
-                
+                        self.personDetected()
+                    else:
+                        possiblyDetected -= 1
 
-                # OBJECT TRACKING
-                self.trackPerson(img, counter)
-                
-                counter += 1
-                
+                if (possiblyDetected == 0):
+                    self.noPersonDetected()
+                else:
+                    self.checkDetectedTime()
+                    # TODO: handle for multiple person detected
+                    self.trackPerson(img, counter)
+                    counter += 1
+                    
+                print("Elapsed time: {}".format(time.time() - initTime))
                 # Read image
                 img = cv2.resize(img, (960, 540))
                 cv2.imshow("preview", img)

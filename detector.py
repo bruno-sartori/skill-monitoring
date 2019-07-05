@@ -7,7 +7,6 @@ import tensorflow as tf
 import cv2
 import time
 
-
 class DetectorAPI:
     def __init__(self, path_to_ckpt):
         self.path_to_ckpt = path_to_ckpt
