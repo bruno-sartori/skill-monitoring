@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import requests
 import cv2
 from threading import Thread
@@ -7,10 +9,14 @@ from collections import deque
 from movement import Movement
 import time
 import sys
+import os
+
+env = os.environ['PYTHON_ENV']
 
 class Camera():
-    def __init__(self, move=False):
+    def __init__(self, move=False, direction=False):
         self.move = move
+        self.direction = direction
         self.running = True
         self.buffer = 32
         self.pts = deque(maxlen=self.buffer)
@@ -28,7 +34,16 @@ class Camera():
             self.movement = Movement()
     
     def sendAlert(self):
-        print("=====ALERT=====")
+        url = os.environ['CORE_HOST'] + '/alerts/3' # level 3 alert
+        try:
+            response = requests.post(url, 
+                data={ 'origin': 'CAMERA', 'location': 5, 'title': 'ALERTA!!!', 'description': 'Teste' }, 
+                headers={ 'Authorization': 'JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwibG9naW4iOiJicnVub3NhcnRvcmkud2VibWFzdGVyQGdtYWlsLmNvbSIsImNsaWVudCI6MSwiZGF0ZSI6IjIwMTktMDgtMTZUMDE6MzA6MTMuMDM0WiJ9.9z14DPcEAGUEE1MF27-BuBsRZHUav0jbNBy-zhYwVlU' },
+                verify=False)
+
+            print(response)
+        except requests.exceptions.RequestException as error:
+            print(error)
 
     def checkDetectedTime(self):
         now = time.time()
@@ -55,9 +70,11 @@ class Camera():
         
     
     # TODO: handle multiple detected persons
-    def personDetected(self):
+    def personDetected(self, img):
         if (self.detectedTime == 0):
             self.detectedTime = time.time()
+        cv2.imwrite('./detected/' + str(time.time()) + '.jpg', img)    
+    
 
         self.noDetectedTime = 0
         #print("Detected time: {}".format(time.time() - self.detectedTime))
@@ -136,7 +153,7 @@ class Camera():
             0.35, (0, 0, 255), 1)
 
     def run(self):
-        model_path = '/home/bruno/Documentos/Projetos/octopus/skill-monitoring/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
+        model_path = '/home/skill-monitoring/ssd_mobilenet_v1_coco/frozen_inference_graph.pb' if env == 'production' else '/home/bruno/Documentos/Projetos/octopus/skill-monitoring/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
         odapi = DetectorAPI(path_to_ckpt=model_path)
         cap = cv2.VideoCapture(self.stream_url)
         threshold = 0.7
@@ -149,7 +166,9 @@ class Camera():
 
             if r == True:
                 img = cv2.resize(img, (1280, 720))
-                cv2.rectangle(img, (self.area[0],self.area[1]),(self.area[2], self.area[3]),(0,255,0),3)
+
+                if (self.direction):
+                    cv2.rectangle(img, (self.area[0],self.area[1]),(self.area[2], self.area[3]),(0,255,0),3)
 
                 boxes, scores, classes, num = odapi.processFrame(img)
 
@@ -161,13 +180,14 @@ class Camera():
                     if classes[i] == 1 and scores[i] > threshold:
                         box = boxes[i]
                         cv2.rectangle(img,(box[1],box[0]),(box[3],box[2]),(255,0,0),2)
-
-                        center = (int((box[1]+box[3])/2), int((box[0]+box[2])/2))
-                        cv2.circle(img, center, 5, (0, 0, 255), -1)
                         
-                        self.isInside = self.rectContains(self.area, center)
-                        self.pts.appendleft(center)
-                        self.personDetected()
+                        if (self.direction):
+                            center = (int((box[1]+box[3])/2), int((box[0]+box[2])/2))
+                            cv2.circle(img, center, 5, (0, 0, 255), -1)
+                            self.isInside = self.rectContains(self.area, center)
+                            self.pts.appendleft(center)
+                        
+                        self.personDetected(img)
                     else:
                         possiblyDetected -= 1
 
@@ -175,15 +195,19 @@ class Camera():
                     self.noPersonDetected()
                 else:
                     self.checkDetectedTime()
-                    # TODO: handle for multiple person detected
-                    self.trackPerson(img, counter)
-                    counter += 1
+                    if self.direction:
+                        # TODO: handle for multiple person detected
+                        self.trackPerson(img, counter)
+                        counter += 1
                     
                 print("Elapsed time: {}".format(time.time() - initTime))
                 # Read image
-                img = cv2.resize(img, (960, 540))
-                cv2.imshow("preview", img)
+                if (env == 'development'):
+                    img = cv2.resize(img, (960, 540))
+                    cv2.imshow("preview", img)
+                
                 key = cv2.waitKey(1)
+                
                 if key & 0xFF == ord('q'):
                     self.stop()
             else:

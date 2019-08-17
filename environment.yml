@@ -2,6 +2,7 @@ name: skill-monitoring
 channels:
   - defaults
 dependencies:
+  - gunicorn=19.9.0
   - asn1crypto=0.24.0=py36_0
   - ca-certificates=2019.5.15=0
   - certifi=2019.6.16=py36_0

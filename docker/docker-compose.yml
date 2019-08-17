@@ -1,0 +1,13 @@
+version: "3.3"
+
+services:
+  skill-monitoring:
+    build: ../
+    container_name: "skill-monitoring"
+    ports:
+      - 8001:5000
+    restart: always
+    volumes:
+      - /home/logs:/home/logs
+      - /etc/letsencrypt:/etc/letsencrypt
+     
