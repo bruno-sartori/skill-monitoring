@@ -11,11 +11,11 @@ RUN conda env create -f environment.yml
 RUN echo "source activate skill-monitoring" > ~/.bashrc
 
 ENV PATH /opt/conda/envs/skill-monitoring/bin:$PATH
-ENV CORE_HOST 'https://localhost:9000/v1'
+ENV CORE_HOST 'https://192.168.2.155:9000/v1'
 ENV PYTHON_ENV 'production'
 
 EXPOSE 5000
 
 CMD ["python", "camera.py"]
 
-# docker run --device=/dev/video0:/dev/video0 --name skill-monitoring --rm skill-monitoring:latest
+# docker run --device=/dev/video0:/dev/video0 --name skill-monitoring -d --rm skill-monitoring:latest

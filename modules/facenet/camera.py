@@ -3,10 +3,10 @@
 import requests
 import cv2
 from threading import Thread
-from detector import DetectorAPI
+from .detector import DetectorAPI
 import numpy as np
 from collections import deque
-from movement import Movement
+from .movement import Movement
 import time
 import sys
 import os
@@ -153,7 +153,7 @@ class Camera():
             0.35, (0, 0, 255), 1)
 
     def run(self):
-        model_path = '/home/skill-monitoring/ssd_mobilenet_v1_coco/frozen_inference_graph.pb' if env == 'production' else '/home/bruno/Documentos/Projetos/octopus/skill-monitoring/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
+        model_path = '/home/skill-monitoring/ssd_mobilenet_v1_coco/frozen_inference_graph.pb' if env == 'production' else './facenet/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
         odapi = DetectorAPI(path_to_ckpt=model_path)
         cap = cv2.VideoCapture(self.stream_url)
         threshold = 0.7
@@ -212,7 +212,3 @@ class Camera():
                     self.stop()
             else:
                 break
-     
-if __name__ == '__main__':
-    c = Camera()
-    c.run()
