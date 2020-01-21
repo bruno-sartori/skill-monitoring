@@ -13,28 +13,23 @@ UNKNOWN_PATH = '../../storage/unknown_faces/'
 SCREENSHOTS_PATH = '../../storage/screenshots/'
 IS_DEV = os.getenv('PYTHON_ENV') == 'development'
 
-def getTime():
-	return datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-
 class CameraManagement:
-	def __init__(self, Recognizer):
+	def __init__(self, Recognizer, ImageCreator):
 		self.recognizer = Recognizer()
+		self.imageCreator = ImageCreator()
 		self.window_name="Camera Management"
 		self.recognizer.setup()
-
-	def save_image(self, path, frame, lastName = None):
-		cv2.imwrite(os.path.join(DIRNAME, path) + getTime() + ("_" + lastName if lastName != None else "") + ".jpg", frame)
 
 	def alert_unrecognized_faces(self, faces, frame):
 		if faces:
 			for face in faces:
-				self.save_image(UNKNOWN_PATH, face['cropped'])
+				self.imageCreator.save_image(UNKNOWN_PATH, face['cropped'])
 				print("ALERT_UNKNOWN_FACE: {} {}".format(face['distance'], face['id']))
 
 	def alert_recognized_faces(self, recognized_faces, frame, frame_rate):
 		if recognized_faces:
 			for face in recognized_faces:
-				self.save_image(RECOGNIZED_PATH, face['cropped'], face['name'])
+				self.imageCreator.save_image(RECOGNIZED_PATH, face['cropped'], face['name'])
 				print("ALERT_RECOGNIZED_FACE: {} {} {}".format(face['name'], face['distance'], face['id']))
 
 	def run(self):
@@ -66,7 +61,7 @@ class CameraManagement:
 
 				if detected_faces:
 					if (IS_DEV):
-						self.save_image(DETECTED_PATH, frame)
+						self.imageCreator.save_image(DETECTED_PATH, frame)
 
 					recognized_faces = self.recognizer.recognize_faces(detected_faces)
 
@@ -99,7 +94,7 @@ class CameraManagement:
 			if keyPressed == 27: # ESC key
 				break
 			elif keyPressed == 13: # ENTER key
-				self.save_image(SCREENSHOTS_PATH, frame)
+				self.imageCreator.save_image(SCREENSHOTS_PATH, frame)
 				print('Screenshot saved!')
 		# When everything is done, release the capture
 		cap.release()
