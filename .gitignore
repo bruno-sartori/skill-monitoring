@@ -3,3 +3,8 @@
 settings.json
 faster_rcnn_inception_v2_coco
 video.avi
+
+storage/detected_faces/*
+storage/recognized_faces/*
+storage/screenshots/*
+storage/unknown_faces/*
