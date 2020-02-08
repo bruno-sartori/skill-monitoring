@@ -5,6 +5,7 @@ import datetime
 import numpy as np
 import cv2
 import argparse
+from .face_detector.FaceDetector import FaceDetector
 
 DIRNAME = os.path.dirname(os.path.abspath(__file__))
 RECOGNIZED_PATH = '../../storage/recognized_faces/'
@@ -15,7 +16,8 @@ IS_DEV = os.getenv('PYTHON_ENV') == 'development'
 
 class CameraManagement:
 	def __init__(self, Recognizer, ImageCreator):
-		self.recognizer = Recognizer()
+		self.detector = FaceDetector()
+		self.recognizer = Recognizer(self.detector)
 		self.imageCreator = ImageCreator()
 		self.window_name="Camera Management"
 		self.recognizer.setup()
@@ -57,7 +59,7 @@ class CameraManagement:
 
 			if ((frame_count % frame_interval) == 0):
 
-				detected_faces = self.recognizer.detect_faces(frame)
+				detected_faces = self.detector.detect_faces(frame)
 
 				if detected_faces:
 					if (IS_DEV):

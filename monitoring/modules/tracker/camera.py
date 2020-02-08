@@ -29,15 +29,15 @@ class Camera():
         self.noDetectedTime = 0
         self.detectThreshold = 10 # seconds
         self.noDetectThreshold = 3
-        
+
         if (self.move):
             self.movement = Movement()
-    
+
     def sendAlert(self):
         url = os.environ['CORE_HOST'] + '/alerts/3' # level 3 alert
         try:
-            response = requests.post(url, 
-                data={ 'origin': 'CAMERA', 'location': 5, 'title': 'ALERTA!!!', 'description': 'Teste' }, 
+            response = requests.post(url,
+                data={ 'origin': 'CAMERA', 'location': 5, 'title': 'ALERTA!!!', 'description': 'Teste' },
                 headers={ 'Authorization': 'JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwibG9naW4iOiJicnVub3NhcnRvcmkud2VibWFzdGVyQGdtYWlsLmNvbSIsImNsaWVudCI6MSwiZGF0ZSI6IjIwMTktMDgtMTZUMDE6MzA6MTMuMDM0WiJ9.9z14DPcEAGUEE1MF27-BuBsRZHUav0jbNBy-zhYwVlU' },
                 verify=False)
 
@@ -48,37 +48,37 @@ class Camera():
     def checkDetectedTime(self):
         now = time.time()
 
-        # a person stayed in camera's area for more time than the threshold 
+        # a person stayed in camera's area for more time than the threshold
         if (self.detectedTime != 0 and now - self.detectedTime > self.detectThreshold):
             if (self.lastNotificationSend == 0):
                 self.lastNotificationSend = time.time()
                 self.sendAlert()
             elif (time.time() - self.lastNotificationSend > self.detectThreshold):
                 self.lastNotificationSend = time.time()
-                self.sendAlert() 
+                self.sendAlert()
 
     def noPersonDetected(self):
         now = time.time()
-    
-        if (self.noDetectedTime != 0): 
+
+        if (self.noDetectedTime != 0):
             #print("NO detected time: {}".format(now - self.noDetectedTime))
-            
+
             if (now - self.noDetectedTime > self.noDetectThreshold):
                 self.detectedTime = 0 # zera se não encontrar nenhuma pessoa por +3s
         elif (self.noDetectedTime == 0):
             self.noDetectedTime = time.time()
-        
-    
+
+
     # TODO: handle multiple detected persons
     def personDetected(self, img):
         if (self.detectedTime == 0):
             self.detectedTime = time.time()
-        cv2.imwrite('./detected/' + str(time.time()) + '.jpg', img)    
-    
+        cv2.imwrite('./detected/' + str(time.time()) + '.jpg', img)
+
 
         self.noDetectedTime = 0
         #print("Detected time: {}".format(time.time() - self.detectedTime))
-        
+
     def stop(self):
         self.running = False
 
@@ -116,7 +116,7 @@ class Camera():
                             dirY = 'UP'
                         else:
                             dirY = 'DOWN'
-                
+
                     # handle when both directions are non-empty
                     if dirX != "" and dirY != "":
                         direction = "{}-{}".format(dirY, dirX)
@@ -126,12 +126,12 @@ class Camera():
                         direction = dirX if dirX != "" else dirY
             except IndexError as e:
                 print("Error: %s" % e)
-                pass     
+                pass
             # otherwise, compute the thickness of the line and draw the connecting lines
             thickness = int(np.sqrt(self.buffer / float(i + 1)) * 2.5)
             cv2.line(img, self.pts[i - 1], self.pts[i], (0, 0, 255), thickness)
-        
-        
+
+
         if (self.move):
             if (self.isInside):
                 print("CONTAINS")
@@ -153,12 +153,12 @@ class Camera():
             0.35, (0, 0, 255), 1)
 
     def run(self):
-        model_path = '/home/skill-monitoring/ssd_mobilenet_v1_coco/frozen_inference_graph.pb' if env == 'production' else './facenet/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
+        model_path = './ssd_mobilenet_v1_coco/frozen_inference_graph.pb' if env == 'production' else './monitoring/modules/tracker/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
         odapi = DetectorAPI(path_to_ckpt=model_path)
         cap = cv2.VideoCapture(self.stream_url)
         threshold = 0.7
         counter = 0
-        
+
 
         while self.running:
             initTime = time.time()
@@ -180,13 +180,13 @@ class Camera():
                     if classes[i] == 1 and scores[i] > threshold:
                         box = boxes[i]
                         cv2.rectangle(img,(box[1],box[0]),(box[3],box[2]),(255,0,0),2)
-                        
+
                         if (self.direction):
                             center = (int((box[1]+box[3])/2), int((box[0]+box[2])/2))
                             cv2.circle(img, center, 5, (0, 0, 255), -1)
                             self.isInside = self.rectContains(self.area, center)
                             self.pts.appendleft(center)
-                        
+
                         self.personDetected(img)
                     else:
                         possiblyDetected -= 1
@@ -199,15 +199,15 @@ class Camera():
                         # TODO: handle for multiple person detected
                         self.trackPerson(img, counter)
                         counter += 1
-                    
+
                 print("Elapsed time: {}".format(time.time() - initTime))
                 # Read image
                 if (env == 'development'):
                     img = cv2.resize(img, (960, 540))
                     cv2.imshow("preview", img)
-                
+
                 key = cv2.waitKey(1)
-                
+
                 if key & 0xFF == ord('q'):
                     self.stop()
             else:
