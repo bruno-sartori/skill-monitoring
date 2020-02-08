@@ -1,7 +1,7 @@
 from monitoring.camera.CameraManagement import CameraManagement
 from monitoring.camera.ImageCreator import ImageCreator
-from monitoring.modules.facenet.recognizer import Recognizer
+from monitoring.modules.facenet.recognizer import FacenetRecognizer
 
 if __name__ == '__main__':
-    c = CameraManagement(Recognizer, ImageCreator)
+    c = CameraManagement(FacenetRecognizer, ImageCreator)
     c.run()
