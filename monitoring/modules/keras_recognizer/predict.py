@@ -12,7 +12,7 @@ def prepare(file):
     return new_array.reshape(-1, IMG_SIZE, IMG_SIZE, 1)
 
 model = tf.keras.models.load_model("CNN.model")
-image = "bruno1.jpeg"  # your image path
+image = "pessoa1.jpeg"  # your image path
 
 
 IMG_SIZE = 50
@@ -25,7 +25,11 @@ img = img/255.0
 
 prediction = model.predict([img])
 
-print(prediction)
+print('results================')
+print(prediction[0])
+print(len(prediction[0]))
+print(list(prediction[0]))
+print(CATEGORIES)
 
 #prediction = model.predict([image])
 prediction = list(prediction[0])
