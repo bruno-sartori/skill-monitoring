@@ -15,8 +15,17 @@ model = tf.keras.models.load_model("CNN.model")
 image = "bruno1.jpeg"  # your image path
 
 
-img = np.array(keras.preprocessing.image.load_img(image, target_size=(600, 400)))
+IMG_SIZE = 50
+
+image = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
+image = cv2.resize(image, (IMG_SIZE, IMG_SIZE))
+
+img = np.array(image).reshape(-1, IMG_SIZE, IMG_SIZE, 1)
+img = img/255.0
+
 prediction = model.predict([img])
+
+print(prediction)
 
 #prediction = model.predict([image])
 prediction = list(prediction[0])
