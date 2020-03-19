@@ -17,10 +17,23 @@ IS_DEV = os.getenv('PYTHON_ENV') == 'development'
 class CameraManagement:
 	def __init__(self, Recognizer, ImageCreator):
 		self.detector = FaceDetector()
-		self.recognizer = Recognizer(self.detector)
+		#self.recognizer = Recognizer(self.detector)
 		self.imageCreator = ImageCreator()
 		self.window_name="Camera Management"
-		self.recognizer.setup()
+		#self.recognizer.setup()
+		self.stream_url = 'rtsp://192.168.2.167:8554/profile1'
+
+	def add_overlays(self, frame, faces, frame_rate):
+		if faces is not None:
+			for face in faces:
+				bb = face['rect']
+				cv2.rectangle(frame, (bb[0], bb[1]), (bb[2], bb[3]), (0, 255, 0), 2)
+				if face['name'] is not None:
+					cv2.putText(frame, face['name'], (bb[0], bb[3]),
+					            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), thickness=2, lineType=2)
+
+		cv2.putText(frame, str(frame_rate) + " fps", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), thickness=2, lineType=2)
+
 
 	def alert_unrecognized_faces(self, faces, frame):
 		if faces:
@@ -40,7 +53,7 @@ class CameraManagement:
 		frame_rate = 0
 		frame_count = 0
 
-		cap = cv2.VideoCapture(0)
+		cap = cv2.VideoCapture(self.stream_url)
 		#cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
 		#cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
 		#cap.set(cv2.CAP_PROP_FPS, 30)
@@ -65,7 +78,7 @@ class CameraManagement:
 					if (IS_DEV):
 						self.imageCreator.save_image(DETECTED_PATH, frame)
 
-					recognized_faces = self.recognizer.recognize_faces(detected_faces)
+					recognized_faces = False #self.recognizer.recognize_faces(detected_faces)
 
 					if recognized_faces:
 						self.alert_recognized_faces(recognized_faces, frame, frame_rate)
@@ -87,7 +100,7 @@ class CameraManagement:
 			if (IS_DEV):
 				if (detected_faces is not None):
 					# adiciona contorno na face detectada/reconhecida e nome caso seja reconhecida
-					self.recognizer.add_overlays(frame, recognized_faces or detected_faces, frame_rate)
+					self.add_overlays(frame, recognized_faces or detected_faces, frame_rate)
 
 				cv2.imshow(self.window_name, frame)
 

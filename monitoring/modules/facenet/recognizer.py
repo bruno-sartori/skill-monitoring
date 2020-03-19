@@ -7,7 +7,7 @@ import os, os.path
 import datetime
 import tensorflow as tf
 import numpy as np
-from monitoring.modules.facenet import facenet
+from monitoring.lib.facenet import facenet
 #from monitoring.align import detect_face
 import cv2
 import argparse
@@ -33,7 +33,7 @@ class Recognizer:
 		self.sess = tf.Session()
 
 		# read 20170512-110547 model file downloaded from https://drive.google.com/file/d/0B5MzpY9kBtDVZ2RpVDYwWmxoSUk
-		facenet.load_model(os.path.join(DIRNAME, "./models/20170512-110547/20170512-110547.pb"))
+		facenet.load_model(os.path.join(DIRNAME, "../../lib/facenet/models/20170512-110547/20170512-110547.pb"))
 
 		# Get input and output tensors
 		self.images_placeholder = tf.get_default_graph().get_tensor_by_name("input:0")
@@ -87,18 +87,6 @@ class Recognizer:
 				found_face['id'] = None
 				processed_faces.append(found_face)
 		return processed_faces
-
-
-	def add_overlays(self, frame, faces, frame_rate):
-		if faces is not None:
-			for face in faces:
-				bb = face['rect']
-				cv2.rectangle(frame, (bb[0], bb[1]), (bb[2], bb[3]), (0, 255, 0), 2)
-				if face['name'] is not None:
-					cv2.putText(frame, face['name'], (bb[0], bb[3]), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), thickness=2, lineType=2)
-
-		cv2.putText(frame, str(frame_rate) + " fps", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), thickness=2, lineType=2)
-
 
 	def getEmbedding(self, resized):
 		reshaped = resized.reshape(-1, self.input_image_size, self.input_image_size,3)
